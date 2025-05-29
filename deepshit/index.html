@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="https://anyai.aah.id.vn/images/Any-AI-icon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <title>Any AI || Deepshit chat</title>
     <style>
         * {
@@ -36,7 +37,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.8);
             z-index: -1;
         }
         #chat-container {
@@ -98,10 +99,11 @@
             text-align: left;
             margin: 10px 0;
             padding: 10px;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.5);
             border-radius: 5px;
             max-width: 80%;
             margin-left: auto;
+            white-space: pre-wrap; /* Preserve line breaks */
         }
         .ai-message {
             text-align: left;
@@ -109,10 +111,11 @@
             padding: 10px;
             background: transparent;
             max-width: 100%;
+            white-space: pre-wrap; /* Preserve line breaks */
         }
         #chat-box {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
             margin-bottom: 20px;
@@ -125,20 +128,26 @@
         #chat-input {
             flex: 1;
             padding: 10px;
+            height: 4em;
             background: #333;
             border: none;
             border-radius: 5px;
             color: white;
             margin-right: 10px;
+            resize: none; /* Prevent manual resizing */
+            overflow-y: auto; /* Allow scrolling if content overflows */
+            scrollbar-width: thin;
+            scrollbar-color: #1d1d1d #ff000000;
         }
         #chat-input:focus {
             outline: none;
         }
         #send-button {
-            padding: 10px 20px;
+            position: relative;
+            padding: 0.9em 1em;
             background: #555;
             border: none;
-            border-radius: 5px;
+            border-radius: 100px;
             color: white;
             cursor: pointer;
         }
@@ -149,23 +158,22 @@
             display: none;
         }
 
-
-            @media (max-width: 800px) {
-        #chat-history {
-            max-width: 90vw;
+        @media (max-width: 800px) {
+            #chat-history {
+                max-width: 90vw;
+            }
+            #chat-box {
+                position: relative;
+                max-width: 90vw;
+                bottom: 2vh;
+            }
+            #brand-title {
+                font-size: 36px;
+            }
+            .user-message, .ai-message {
+                max-width: 90%;
+            }
         }
-        #chat-box {
-            position: relative;
-            max-width: 90vw;
-            bottom: 5vh;
-        }
-        #brand-title {
-            font-size: 36px;
-        }
-        .user-message, .ai-message {
-            max-width: 90%;
-        }
-    }
     </style>
 </head>
 <body>
@@ -175,8 +183,8 @@
     <div id="overlay"></div>
     <div id="chat-container">
         <div id="brand-wrapper">
-        <div id="brand-title">DeepShit</div>
-        <p id="subtitle" >Powered by Any AI</p>
+            <div id="brand-title">DeepShit</div>
+            <p id="subtitle">Powered by Any AI</p>
         </div>
 
         <div id="chat-wrapper">
@@ -185,20 +193,23 @@
             </div>
         </div>
         <div id="chat-box">
-            <input type="text" id="chat-input" placeholder="What do you want to know?">
-            <button id="send-button">Send</button>
+            <textarea id="chat-input" placeholder="What do you want to know?"></textarea>
+            <button id="send-button"><i class="fa fa-arrow-up" aria-hidden="true"></i></button>
         </div>
     </div>
 
     <script>
         const chatInput = document.getElementById('chat-input');
         const chatHistoryContent = document.getElementById('chat-history-content');
+        const chatWrapper = document.getElementById('chat-wrapper');
         const brandWrapper = document.getElementById('brand-wrapper');
 
-        chatInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
+        chatInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // Prevent default Enter behavior (new line)
                 sendMessage();
             }
+            // Shift+Enter will add a new line by default in textarea
         });
 
         document.getElementById('send-button').addEventListener('click', sendMessage);
@@ -206,26 +217,26 @@
         function sendMessage() {
             const message = chatInput.value.trim();
             if (message) {
-                // Add user message
+                // Add user message and scroll to bottom
                 const userMessage = document.createElement('div');
                 userMessage.className = 'user-message';
                 userMessage.textContent = message;
                 chatHistoryContent.appendChild(userMessage);
+                chatWrapper.scrollTop = chatWrapper.scrollHeight;
 
-                // Simulate AI response
+                // Simulate AI response and scroll to bottom
                 setTimeout(() => {
                     const aiMessage = document.createElement('div');
                     aiMessage.className = 'ai-message';
                     aiMessage.textContent = `Why do we use it? \n
 It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. \n The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident, sometimes on purpose (injected humour and the like). \n \n
 
-
 Where does it come from? \n
 Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32. \n \n
 
 The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for those interested. Sections 1.10.32 and 1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also reproduced in their exact original form, accompanied by English versions from the 1914 translation by H. Rackham.`;
                     chatHistoryContent.appendChild(aiMessage);
-                    chatHistoryContent.scrollTop = chatHistoryContent.scrollHeight;
+                    chatWrapper.scrollTop = chatWrapper.scrollHeight;
                 }, 500);
 
                 // Hide brand title
@@ -234,7 +245,6 @@ The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for t
                 }
 
                 chatInput.value = '';
-                chatHistoryContent.scrollTop = chatHistoryContent.scrollHeight;
             }
         }
     </script>
