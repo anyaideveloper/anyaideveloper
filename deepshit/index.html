@@ -56,22 +56,37 @@
             position: absolute;
             top: 40%;
             left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.3s ease;
+            z-index: 2;
         }
-
+        #brand-wrapper.top-left {
+            top: 20px;
+            left: 20px;
+            transform: none;
+            text-align: left;
+        }
         #brand-title {
             font-size: 63px;
-            transform: translateX(-50%);
+            transition: font-size 0.3s ease;
+        }
+        #brand-wrapper.top-left #brand-title {
+            font-size: 24px;
         }
         #subtitle {
             font-size: 14px;
+            transition: font-size 0.3s ease;
         }
-
+        #brand-wrapper.top-left #subtitle {
+            font-size: 10px;
+        }
         #chat-wrapper {
             width: 100%;
-            height: calc(100vh - 100px); /* Adjust based on chat-box height */
+            height: calc(100vh - 100px);
             overflow-y: auto;
             scrollbar-width: thin;
             scrollbar-color: #333 #ff000000;
+            margin-top: 60px; /* Prevent overlap with top-left branding */
         }
         #chat-wrapper::-webkit-scrollbar {
             width: 8px;
@@ -103,7 +118,7 @@
             border-radius: 5px;
             max-width: 80%;
             margin-left: auto;
-            white-space: pre-wrap; /* Preserve line breaks */
+            white-space: pre-wrap;
         }
         .ai-message {
             text-align: left;
@@ -111,7 +126,42 @@
             padding: 10px;
             background: transparent;
             max-width: 100%;
-            white-space: pre-wrap; /* Preserve line breaks */
+            white-space: pre-wrap;
+        }
+        .ai-message .image-container {
+            margin-top: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .ai-message .image-container.single img {
+            max-width: 100%;
+            width: 100%;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 0;
+        }
+        .ai-message .image-container.pair {
+            flex-direction: row;
+            justify-content: space-between;
+        }
+        .ai-message .image-container.pair img {
+            width: calc(50% - 2.5px);
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .ai-message .image-container.multiple {
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 5px;
+            justify-content: flex-start;
+        }
+        .ai-message .image-container.multiple img {
+            width: 75px;
+            height: 75px;
+            object-fit: cover;
+            border-radius: 5px;
+            cursor: pointer;
         }
         #chat-box {
             background: rgba(0, 0, 0, 0.5);
@@ -134,8 +184,8 @@
             border-radius: 5px;
             color: white;
             margin-right: 10px;
-            resize: none; /* Prevent manual resizing */
-            overflow-y: auto; /* Allow scrolling if content overflows */
+            resize: none;
+            overflow-y: auto;
             scrollbar-width: thin;
             scrollbar-color: #1d1d1d #ff000000;
         }
@@ -157,6 +207,41 @@
         .hidden {
             display: none;
         }
+        .image-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .image-modal img {
+            max-width: 90%;
+            max-height: 90vh;
+            object-fit: contain;
+        }
+        .image-modal .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .ai-message a, .user-message a {
+            color: inherit;
+            text-decoration: underline;
+            transition: font-weight 0.2s ease;
+        }
+        .ai-message a:hover, .user-message a:hover {
+            font-weight: bold;
+        }
 
         @media (max-width: 750px) {
             #chat-history {
@@ -167,11 +252,18 @@
                 max-width: 90vw;
                 bottom: 4vh;
             }
-            #brand-title {
-                font-size: 36px;
+            #brand-wrapper.top-left {
+                top: 10px;
+                left: 10px;
             }
-            .user-message, .ai-message {
-                max-width: 90%;
+            #brand-wrapper.top-left #brand-title {
+                font-size: 18px;
+            }
+            #brand-wrapper.top-left #subtitle {
+                font-size: 8px;
+            }
+            #chat-wrapper {
+                margin-top: 40px; /* Smaller margin for mobile */
             }
         }
     </style>
@@ -199,52 +291,263 @@
     </div>
 
     <script>
+        let userId;
+        async function getUserId() {
+            try {
+                const response = await fetch('https://api64.ipify.org?format=json', { mode: 'cors' });
+                if (!response.ok) throw new Error(`IP fetch failed: ${response.status}`);
+                const data = await response.json();
+                userId = btoa(data.ip);
+                console.log('User ID:', userId);
+            } catch (error) {
+                console.error('Error fetching IP:', error);
+                userId = 'anonymous';
+            }
+        }
+        getUserId();
+
         const chatInput = document.getElementById('chat-input');
         const chatHistoryContent = document.getElementById('chat-history-content');
         const chatWrapper = document.getElementById('chat-wrapper');
         const brandWrapper = document.getElementById('brand-wrapper');
+        const sendButton = document.getElementById('send-button');
+
+        // Load chat history from localStorage
+        function loadChatHistory() {
+            const savedChat = localStorage.getItem('chatHistory');
+            if (savedChat) {
+                try {
+                    const messages = JSON.parse(savedChat);
+                    messages.forEach(message => {
+                        const messageDiv = document.createElement('div');
+                        messageDiv.className = message.type === 'user' ? 'user-message' : 'ai-message';
+                        messageDiv.innerHTML = linkifyText(message.text);
+
+                        if (message.images && message.images.length > 0) {
+                            const imageContainer = document.createElement('div');
+                            imageContainer.className = 'image-container';
+                            if (message.images.length === 1) {
+                                imageContainer.classList.add('single');
+                            } else if (message.images.length === 2) {
+                                imageContainer.classList.add('pair');
+                            } else {
+                                imageContainer.classList.add('multiple');
+                            }
+                            message.images.forEach(url => {
+                                const img = document.createElement('img');
+                                img.src = url;
+                                img.alt = 'Assistant image';
+                                imageContainer.appendChild(img);
+                            });
+                            messageDiv.appendChild(imageContainer);
+                        }
+
+                        chatHistoryContent.appendChild(messageDiv);
+                    });
+                    if (messages.length > 0) {
+                        brandWrapper.classList.add('top-left');
+                        chatWrapper.scrollTop = chatWrapper.scrollHeight;
+                    }
+                    addImageClickListeners();
+                } catch (error) {
+                    console.error('Error parsing chat history:', error);
+                }
+            }
+        }
+
+        // Save chat history to localStorage
+        function saveChatHistory() {
+            const messages = [];
+            const messageElements = chatHistoryContent.querySelectorAll('.user-message, .ai-message');
+            messageElements.forEach(element => {
+                const text = element.innerHTML; // Preserve HTML for links
+                const images = Array.from(element.querySelectorAll('.image-container img')).map(img => img.src);
+                messages.push({
+                    type: element.classList.contains('user-message') ? 'user' : 'ai',
+                    text,
+                    images
+                });
+            });
+
+            // Limit to 100 messages to prevent excessive storage
+            const maxMessages = 100;
+            if (messages.length > maxMessages) {
+                messages.splice(0, messages.length - maxMessages);
+            }
+
+            localStorage.setItem('chatHistory', JSON.stringify(messages));
+        }
+
+        // Load chat history on page load
+        loadChatHistory();
 
         chatInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault(); // Prevent default Enter behavior (new line)
+                e.preventDefault();
                 sendMessage();
             }
-            // Shift+Enter will add a new line by default in textarea
         });
 
-        document.getElementById('send-button').addEventListener('click', sendMessage);
+        sendButton.addEventListener('click', sendMessage);
 
-        function sendMessage() {
+        function linkifyText(text) {
+            let result = text.replace(/</g, '<').replace(/>/g, '>').replace(/\n/g, '<br>');
+
+            result = result.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (match, displayText, url) => {
+                return `<a href="${url}" target="_blank">${displayText}</a>`;
+            });
+
+            const urlRegex = /(https?:\/\/[^\s<]+)(?=[.,!?]?(\s|$))/g;
+            result = result.replace(urlRegex, (match, url) => {
+                const cleanUrl = url.replace(/[.,!?]$/, '');
+                const isAlreadyLinked = result.includes(`<a href="${cleanUrl}"`) || result.includes(`<a href="${cleanUrl.slice(0, -1)}"`);
+                if (!isAlreadyLinked) {
+                    return `<a href="${cleanUrl}" target="_blank">${cleanUrl}</a>`;
+                }
+                return match;
+            });
+
+            return result;
+        }
+
+        async function sendMessage() {
             const message = chatInput.value.trim();
-            if (message) {
-                // Add user message and scroll to bottom
-                const userMessage = document.createElement('div');
-                userMessage.className = 'user-message';
-                userMessage.textContent = message;
-                chatHistoryContent.appendChild(userMessage);
-                chatWrapper.scrollTop = chatWrapper.scrollHeight;
+            if (!message) return;
 
-                // Simulate AI response and scroll to bottom
-                setTimeout(() => {
+            const userMessage = document.createElement('div');
+            userMessage.className = 'user-message';
+            userMessage.innerHTML = linkifyText(message);
+            chatHistoryContent.appendChild(userMessage);
+            chatWrapper.scrollTop = chatWrapper.scrollHeight;
+
+            chatInput.value = '';
+            if (!brandWrapper.classList.contains('top-left')) {
+                brandWrapper.classList.add('top-left');
+            }
+
+            // Save user message to chat history
+            saveChatHistory();
+
+            const maxRetries = 2;
+            let attempt = 0;
+
+            while (attempt < maxRetries) {
+                try {
+                    const response = await fetch('https://agent.aah.id.vn/webhook/deepshit-assistant', {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ userId, message })
+                    });
+
+                    if (!response.ok) throw new Error(`Server error: ${response.status} ${response.statusText}`);
+
+                    const result = await response.json();
+                    console.log('Parsed response:', result);
+
                     const aiMessage = document.createElement('div');
                     aiMessage.className = 'ai-message';
-                    aiMessage.textContent = `Why do we use it? \n
-It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. \n The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident, sometimes on purpose (injected humour and the like). \n \n
 
-Where does it come from? \n
-Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32. \n \n
+                    // Handle both single object and array response
+                    let output = result.output ? result.output : (Array.isArray(result) && result[0]?.output ? result[0].output : null);
+                    let outputMessage = 'Error: No valid message received';
+                    let photoUrls = [];
 
-The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for those interested. Sections 1.10.32 and 1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also reproduced in their exact original form, accompanied by English versions from the 1914 translation by H. Rackham.`;
+                    if (output && output.outputMessage) {
+                        outputMessage = output.outputMessage;
+                        photoUrls = Array.isArray(output.photoUrls) ? output.photoUrls : [];
+                    } else {
+                        console.warn('Unexpected response:', result);
+                    }
+
+                    aiMessage.innerHTML = linkifyText(outputMessage);
+
+                    if (photoUrls.length > 0) {
+                        const imageContainer = document.createElement('div');
+                        imageContainer.className = 'image-container';
+                        if (photoUrls.length === 1) {
+                            imageContainer.classList.add('single');
+                        } else if (photoUrls.length === 2) {
+                            imageContainer.classList.add('pair');
+                        } else {
+                            imageContainer.classList.add('multiple');
+                        }
+                        photoUrls.forEach(url => {
+                            if (typeof url === 'string' && url.trim() !== '') {
+                                const img = document.createElement('img');
+                                img.src = url;
+                                img.alt = 'Assistant image';
+                                imageContainer.appendChild(img);
+                            }
+                        });
+                        aiMessage.appendChild(imageContainer);
+                    }
+
                     chatHistoryContent.appendChild(aiMessage);
                     chatWrapper.scrollTop = chatWrapper.scrollHeight;
-                }, 500);
 
-                // Hide brand title
-                if (brandWrapper.style.display !== 'none') {
-                    brandWrapper.classList.add('hidden');
+                    // Save AI message to chat history
+                    saveChatHistory();
+
+                    addImageClickListeners();
+                    return; // Exit on success
+                } catch (error) {
+                    console.error(`Attempt ${attempt + 1} failed:`, error);
+                    attempt++;
+                    if (attempt === maxRetries) {
+                        const errorMessage = document.createElement('div');
+                        errorMessage.className = 'ai-message';
+                        errorMessage.innerText = `Error: Failed to connect to server after ${maxRetries} attempts`;
+                        chatHistoryContent.appendChild(errorMessage);
+                        chatWrapper.scrollTop = chatWrapper.scrollHeight;
+                        saveChatHistory();
+                    }
                 }
+            }
+        }
 
-                chatInput.value = '';
+        function addImageClickListeners() {
+            const images = document.querySelectorAll('.ai-message img');
+            images.forEach(img => {
+                img.removeEventListener('click', openImageModal);
+                img.addEventListener('click', openImageModal);
+            });
+        }
+
+        function openImageModal(event) {
+            const src = event.target.src;
+
+            const modal = document.createElement('div');
+            modal.className = 'image-modal';
+
+            const img = document.createElement('img');
+            img.src = src;
+            img.alt = 'Enlarged image';
+
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'close-btn';
+            closeBtn.innerHTML = '✖';
+            closeBtn.addEventListener('click', closeImageModal);
+
+            modal.appendChild(img);
+            modal.appendChild(closeBtn);
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeImageModal();
+                }
+            });
+
+            document.body.appendChild(modal);
+        }
+
+        function closeImageModal() {
+            const modal = document.querySelector('.image-modal');
+            if (modal) {
+                modal.remove();
             }
         }
     </script>
