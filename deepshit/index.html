@@ -10,6 +10,7 @@
         * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box; /* Ensure consistent sizing */
         }
 
         body {
@@ -193,13 +194,18 @@
             outline: none;
         }
         #send-button {
-            position: relative;
-            padding: 0.9em 1em;
+            width: 40px; /* Fixed width for square shape */
+            height: 40px; /* Fixed height for square shape */
             background: #555;
             border: none;
-            border-radius: 100px;
+            border-radius: 50%; /* Perfect circle */
             color: white;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px; /* Consistent icon size */
+            transition: background 0.2s ease;
         }
         #send-button:hover {
             background: #666;
@@ -264,6 +270,11 @@
             }
             #chat-wrapper {
                 margin-top: 40px; /* Smaller margin for mobile */
+            }
+            #send-button {
+                width: 36px; /* Slightly smaller for mobile */
+                height: 36px;
+                font-size: 14px; /* Smaller icon for mobile */
             }
         }
     </style>
@@ -460,7 +471,7 @@
                         outputMessage = output.outputMessage;
                         photoUrls = Array.isArray(output.photoUrls) ? output.photoUrls : [];
                     } else {
-                        console.warn('Unexpected response:', result);
+                        console.warn('Unexpected response structure:', result);
                     }
 
                     aiMessage.innerHTML = linkifyText(outputMessage);
@@ -529,7 +540,7 @@
 
             const closeBtn = document.createElement('button');
             closeBtn.className = 'close-btn';
-            closeBtn.innerHTML = '✖';
+            closeBtn.innerText = '✖';
             closeBtn.addEventListener('click', closeImageModal);
 
             modal.appendChild(img);
