@@ -10,7 +10,7 @@
         * {
             margin: 0;
             padding: 0;
-            box-sizing: border-box; /* Ensure consistent sizing */
+            box-sizing: border-box;
         }
 
         body {
@@ -58,7 +58,7 @@
             top: 40%;
             left: 50%;
             transform: translateX(-50%);
-            transition: all 0.3s ease;
+            transition: top 0.3s ease, left 0.3s ease, transform 0.3s ease;
             z-index: 2;
         }
         #brand-wrapper.top-left {
@@ -87,7 +87,7 @@
             overflow-y: auto;
             scrollbar-width: thin;
             scrollbar-color: #333 #ff000000;
-            margin-top: 60px; /* Prevent overlap with top-left branding */
+            margin-top: 60px;
         }
         #chat-wrapper::-webkit-scrollbar {
             width: 8px;
@@ -194,17 +194,17 @@
             outline: none;
         }
         #send-button {
-            width: 40px; /* Fixed width for square shape */
-            height: 40px; /* Fixed height for square shape */
+            width: 40px;
+            height: 40px;
             background: #555;
             border: none;
-            border-radius: 50%; /* Perfect circle */
+            border-radius: 50%;
             color: white;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px; /* Consistent icon size */
+            font-size: 16px;
             transition: background 0.2s ease;
         }
         #send-button:hover {
@@ -259,22 +259,23 @@
                 bottom: 4vh;
             }
             #brand-wrapper.top-left {
-                top: 10px;
-                left: 10px;
+                top: 10px !important;
+                left: 10px !important;
+                transform: none !important;
             }
             #brand-wrapper.top-left #brand-title {
-                font-size: 18px;
+                font-size: 18px !important;
             }
             #brand-wrapper.top-left #subtitle {
-                font-size: 8px;
+                font-size: 8px !important;
             }
             #chat-wrapper {
-                margin-top: 40px; /* Smaller margin for mobile */
+                margin-top: 60px;
             }
             #send-button {
-                width: 36px; /* Slightly smaller for mobile */
+                width: 36px;
                 height: 36px;
-                font-size: 14px; /* Smaller icon for mobile */
+                font-size: 14px;
             }
         }
     </style>
@@ -371,7 +372,7 @@
             const messages = [];
             const messageElements = chatHistoryContent.querySelectorAll('.user-message, .ai-message');
             messageElements.forEach(element => {
-                const text = element.innerHTML; // Preserve HTML for links
+                const text = element.innerHTML;
                 const images = Array.from(element.querySelectorAll('.image-container img')).map(img => img.src);
                 messages.push({
                     type: element.classList.contains('user-message') ? 'user' : 'ai',
@@ -380,7 +381,6 @@
                 });
             });
 
-            // Limit to 100 messages to prevent excessive storage
             const maxMessages = 100;
             if (messages.length > maxMessages) {
                 messages.splice(0, messages.length - maxMessages);
@@ -436,7 +436,6 @@
                 brandWrapper.classList.add('top-left');
             }
 
-            // Save user message to chat history
             saveChatHistory();
 
             const maxRetries = 2;
@@ -462,7 +461,6 @@
                     const aiMessage = document.createElement('div');
                     aiMessage.className = 'ai-message';
 
-                    // Handle both single object and array response
                     let output = result.output ? result.output : (Array.isArray(result) && result[0]?.output ? result[0].output : null);
                     let outputMessage = 'Error: No valid message received';
                     let photoUrls = [];
@@ -500,11 +498,10 @@
                     chatHistoryContent.appendChild(aiMessage);
                     chatWrapper.scrollTop = chatWrapper.scrollHeight;
 
-                    // Save AI message to chat history
                     saveChatHistory();
 
                     addImageClickListeners();
-                    return; // Exit on success
+                    return;
                 } catch (error) {
                     console.error(`Attempt ${attempt + 1} failed:`, error);
                     attempt++;
