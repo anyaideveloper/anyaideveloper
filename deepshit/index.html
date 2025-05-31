@@ -324,9 +324,41 @@
         const brandWrapper = document.getElementById('brand-wrapper');
         const sendButton = document.getElementById('send-button');
 
-        // Load chat history from localStorage
+        // Proxy configuration
+        const proxyUrl = 'https://cors-anywhere.herokuapp.com/'; // Replace with your own proxy in production
+        const apiUrl = 'https://agent.aah.id.vn/webhook/deepshit-assistant';
+
+        // Cookie utility functions
+        function setCookie(name, value, days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            const expires = `expires=${date.toUTCString()}`;
+            const path = `path=${window.location.pathname}`;
+            document.cookie = `${name}=${encodeURIComponent(value)};${expires};${path};SameSite=Strict`;
+        }
+
+        function getCookie(name) {
+            const nameEQ = `${name}=`;
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(nameEQ)) {
+                    return decodeURIComponent(cookie.substring(nameEQ.length));
+                }
+            }
+            return null;
+        }
+
+        function deleteCookie(name) {
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=${window.location.pathname};SameSite=Strict`;
+        }
+
+        // Generate unique cookie name based on page path
+        const cookieName = `chatHistory_${window.location.pathname.replace(/\//g, '_')}`;
+
+        // Load chat history from cookie
         function loadChatHistory() {
-            const savedChat = localStorage.getItem('chatHistory');
+            const savedChat = getCookie(cookieName);
             if (savedChat) {
                 try {
                     const messages = JSON.parse(savedChat);
@@ -367,7 +399,7 @@
             }
         }
 
-        // Save chat history to localStorage
+        // Save chat history to cookie
         function saveChatHistory() {
             const messages = [];
             const messageElements = chatHistoryContent.querySelectorAll('.user-message, .ai-message');
@@ -386,7 +418,14 @@
                 messages.splice(0, messages.length - maxMessages);
             }
 
-            localStorage.setItem('chatHistory', JSON.stringify(messages));
+            setCookie(cookieName, JSON.stringify(messages), 30);
+        }
+
+        // Clear chat history for current page only
+        function clearChatHistory() {
+            deleteCookie(cookieName);
+            chatHistoryContent.innerHTML = '';
+            brandWrapper.classList.remove('top-left');
         }
 
         // Load chat history on page load
@@ -440,10 +479,12 @@
 
             const maxRetries = 2;
             let attempt = 0;
+            const urls = [apiUrl, `${proxyUrl}${apiUrl}`]; // Try direct first, then proxy
 
             while (attempt < maxRetries) {
+                const currentUrl = urls[attempt % 2]; // Alternate between direct and proxy
                 try {
-                    const response = await fetch('https://agent.aah.id.vn/webhook/deepshit-assistant', {
+                    const response = await fetch(currentUrl, {
                         method: 'POST',
                         mode: 'cors',
                         headers: {
@@ -503,7 +544,7 @@
                     addImageClickListeners();
                     return;
                 } catch (error) {
-                    console.error(`Attempt ${attempt + 1} failed:`, error);
+                    console.error(`Attempt ${attempt + 1} failed for ${currentUrl}:`, error);
                     attempt++;
                     if (attempt === maxRetries) {
                         const errorMessage = document.createElement('div');
