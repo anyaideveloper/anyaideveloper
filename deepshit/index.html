@@ -324,12 +324,37 @@
         const brandWrapper = document.getElementById('brand-wrapper');
         const sendButton = document.getElementById('send-button');
 
-        // Generate unique storage key based on page path
-        const storageKey = `chatHistory_${window.location.pathname.replace(/\//g, '_')}`;
+        // Generate unique cookie key based on page path
+        const cookieKey = `chatHistory_${window.location.pathname.replace(/\//g, '_')}`;
 
-        // Load chat history from localStorage
+        // Cookie utility functions
+        function setCookie(name, value, days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            const expires = `expires=${date.toUTCString()}`;
+            const path = `path=${window.location.pathname}`;
+            document.cookie = `${name}=${encodeURIComponent(value)};${expires};${path};SameSite=Strict`;
+        }
+
+        function getCookie(name) {
+            const nameEQ = `${name}=`;
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(nameEQ)) {
+                    return decodeURIComponent(cookie.substring(nameEQ.length));
+                }
+            }
+            return null;
+        }
+
+        function deleteCookie(name) {
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=${window.location.pathname};SameSite=Strict`;
+        }
+
+        // Load chat history from cookie
         function loadChatHistory() {
-            const savedChat = localStorage.getItem(storageKey);
+            const savedChat = getCookie(cookieKey);
             if (savedChat) {
                 try {
                     const messages = JSON.parse(savedChat);
@@ -370,7 +395,7 @@
             }
         }
 
-        // Save chat history to localStorage
+        // Save chat history to cookie
         function saveChatHistory() {
             const messages = [];
             const messageElements = chatHistoryContent.querySelectorAll('.user-message, .ai-message');
@@ -389,12 +414,19 @@
                 messages.splice(0, messages.length - maxMessages);
             }
 
-            localStorage.setItem(storageKey, JSON.stringify(messages));
+            const cookieValue = JSON.stringify(messages);
+            const cookieSize = encodeURIComponent(cookieValue).length;
+            const maxCookieSize = 3686; // 90% of 4096 bytes
+            if (cookieSize > maxCookieSize) {
+                console.warn(`Cookie size (${cookieSize} bytes) exceeds safe limit (${maxCookieSize} bytes). Consider reducing maxMessages.`);
+            }
+
+            setCookie(cookieKey, cookieValue, 30);
         }
 
         // Clear chat history for current page only
         function clearChatHistory() {
-            localStorage.removeItem(storageKey);
+            deleteCookie(cookieKey);
             chatHistoryContent.innerHTML = '';
             brandWrapper.classList.remove('top-left');
         }
