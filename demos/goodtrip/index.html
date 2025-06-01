@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="https://anyai.aah.id.vn/images/Any-AI-icon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <title>Any AI || BDS Agent chat</title>
+    <title>Any AI || GoodTrip chat</title>
     <style>
         * {
             margin: 0;
@@ -38,7 +38,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.7);
             z-index: -1;
         }
         #chat-container {
@@ -282,12 +282,12 @@
 </head>
 <body>
     <video id="video-background" autoplay loop muted>
-        <source src="https://anyai.aah.id.vn/images/bds-background.mp4" type="video/mp4">
+        <source src="https://anyai.aah.id.vn/images/good-trip-background-video.mp4" type="video/mp4">
     </video>
     <div id="overlay"></div>
     <div id="chat-container">
         <div id="brand-wrapper">
-            <div id="brand-title">BDS Agent</div>
+            <div id="brand-title">GoodTrip Agent</div>
             <p id="subtitle">Powered by Any AI</p>
         </div>
 
@@ -297,7 +297,7 @@
             </div>
         </div>
         <div id="chat-box">
-            <textarea id="chat-input" placeholder="What do you want to know?"></textarea>
+            <textarea id="chat-input" placeholder="Bạn muốn tìm  gì?"></textarea>
             <button id="send-button"><i class="fa fa-arrow-up" aria-hidden="true"></i></button>
         </div>
     </div>
@@ -481,7 +481,7 @@
             saveChatHistory();
 
             try {
-                const response = await fetch('https://agent.aah.id.vn/webhook/bds-assistant', {
+                const response = await fetch('https://agent.aah.id.vn/webhook/goodtrip-agent', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
