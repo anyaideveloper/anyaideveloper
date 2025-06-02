@@ -361,7 +361,10 @@
                     messages.forEach(message => {
                         const messageDiv = document.createElement('div');
                         messageDiv.className = message.type === 'user' ? 'user-message' : 'ai-message';
-                        messageDiv.innerHTML = message.text;
+                        const textSpan = document.createElement('span');
+                        textSpan.className = 'message-text';
+                        textSpan.innerHTML = message.text || '';
+                        messageDiv.appendChild(textSpan);
 
                         if (message.images && message.images.length > 0) {
                             const imageContainer = document.createElement('div');
@@ -401,7 +404,7 @@
             const messageElements = chatHistoryContent.querySelectorAll('.user-message, .ai-message');
             messageElements.forEach(element => {
                 const textSpan = element.querySelector('.message-text');
-                const text = textSpan ? textSpan.innerHTML : '';
+                const text = textSpan ? textSpan.innerHTML : element.innerHTML;
                 const images = Array.from(element.querySelectorAll('.image-container img')).map(img => img.src);
                 messages.push({
                     type: element.classList.contains('user-message') ? 'user' : 'ai',
