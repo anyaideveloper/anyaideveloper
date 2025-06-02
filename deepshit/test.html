@@ -400,7 +400,7 @@
 
         // Save chat history to cookie
         function saveChatHistory() {
-            const messages = [];
+            let messages = [];
             const messageElements = chatHistoryContent.querySelectorAll('.user-message, .ai-message');
             messageElements.forEach(element => {
                 const textSpan = element.querySelector('.message-text');
@@ -414,15 +414,26 @@
             });
 
             const maxMessages = 100;
-            if (messages.length > maxMessages) {
-                messages.splice(0, messages.length - maxMessages);
+            const maxCookieSize = 4000; // Slightly below 4096 to account for metadata
+            let cookieValue = JSON.stringify(messages);
+            let cookieSize = encodeURIComponent(cookieValue).length;
+
+            // Truncate older messages if cookie size exceeds limit
+            while (cookieSize > maxCookieSize && messages.length > 0) {
+                messages.shift(); // Remove oldest message
+                cookieValue = JSON.stringify(messages);
+                cookieSize = encodeURIComponent(cookieValue).length;
             }
 
-            const cookieValue = JSON.stringify(messages);
-            const cookieSize = encodeURIComponent(cookieValue).length;
-            const maxCookieSize = 3686; // 90% of 4096 bytes
+            // Apply message count limit
+            if (messages.length > maxMessages) {
+                messages.splice(0, messages.length - maxMessages);
+                cookieValue = JSON.stringify(messages);
+                cookieSize = encodeURIComponent(cookieValue).length;
+            }
+
             if (cookieSize > maxCookieSize) {
-                console.warn(`Cookie size (${cookieSize} bytes) exceeds safe limit (${maxCookieSize} bytes). Consider reducing maxMessages.`);
+                console.warn(`Cookie size (${cookieSize} bytes) still exceeds limit (${maxCookieSize} bytes) after truncation.`);
             }
 
             setCookie(cookieKey, cookieValue, 30);
