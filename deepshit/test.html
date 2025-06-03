@@ -363,9 +363,25 @@
         // IndexedDB setup
         const dbName = 'deepshit-chat';
         const storePrefix = 'chat';
-        const storeName = `${storePrefix}${window.location.pathname}`;
+        const storeName = `${storePrefix}${window.location.pathname.replace(/\//g, '_')}`; // Unique per path
         const pathHistoryCookieKey = 'pathHistory';
         const maxMessages = 200; // 100 chat pairs
+
+        // Open IndexedDB with dynamic store creation
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(dbName, 4);
+                request.onupgradeneeded = event => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(storeName)) {
+                        const store = db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
+                        store.createIndex('timestamp', 'timestamp', { unique: false });
+                    }
+                };
+                request.onsuccess = event => resolve(event.target.result);
+                request.onerror = event => reject(event.target.error);
+            });
+        }
 
         // Update path history cookie
         function updatePathHistory() {
@@ -391,22 +407,6 @@
                     deleteCookie(pathHistoryCookieKey);
                 }
             }
-        }
-
-        // Open IndexedDB
-        function openDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(dbName, 2);
-                request.onupgradeneeded = event => {
-                    const db = event.target.result;
-                    if (!db.objectStoreNames.contains(storeName)) {
-                        const store = db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
-                        store.createIndex('timestamp', 'timestamp', { unique: false });
-                    }
-                };
-                request.onsuccess = event => resolve(event.target.result);
-                request.onerror = event => reject(event.target.error);
-            });
         }
 
         // Migrate old data
@@ -516,7 +516,6 @@
                     images: message.images || [],
                     timestamp: Date.now()
                 });
-
                 addRequest.onerror = () => console.error('Error adding message:', addRequest.error);
 
                 // Check message count
