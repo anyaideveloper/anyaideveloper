@@ -12,7 +12,6 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         body {
             font-family: Arial, sans-serif;
             color: white;
@@ -21,7 +20,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: #222;
+            background: #000;
         }
         #video-background {
             position: fixed;
@@ -32,17 +31,15 @@
             object-fit: cover;
             z-index: -2;
         }
-
         #overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.8);
             z-index: -1;
         }
-
         #chat-container {
             width: 100%;
             height: 100vh;
@@ -53,9 +50,8 @@
             z-index: 1;
             padding: 0;
         }
-
         #brand-wrapper {
-            font-family: Arial, sans-serif;
+            font-family: 'arial', sans-serif;
             text-align: center;
             position: absolute;
             top: 40%;
@@ -64,32 +60,26 @@
             transition: top 0.3s ease, left 0.3s ease, transform 0.3s ease;
             z-index: 2;
         }
-
         #brand-wrapper.top-left {
             top: 20px;
             left: 20px;
             transform: none;
             text-align: left;
         }
-
         #brand-title {
             font-size: 63px;
             transition: font-size 0.3s ease;
         }
-
         #brand-wrapper.top-left #brand-title {
-            font-size: 36px;
+            font-size: 24px;
         }
-
         #subtitle {
             font-size: 14px;
             transition: font-size 0.3s ease;
         }
-
         #brand-wrapper.top-left #subtitle {
             font-size: 10px;
         }
-
         #chat-wrapper {
             width: 100%;
             height: calc(100vh - 100px);
@@ -98,20 +88,16 @@
             scrollbar-color: #333 #ff000000;
             margin-top: 60px;
         }
-
         #chat-wrapper::-webkit-scrollbar {
             width: 8px;
         }
-
         #chat-wrapper::-webkit-scrollbar-track {
             background: #333;
         }
-
         #chat-wrapper::-webkit-scrollbar-thumb {
             background: #555;
             border-radius: 4px;
         }
-
         #chat-history {
             width: 40em;
             margin-left: auto;
@@ -119,13 +105,11 @@
             padding: 20px 0;
             margin-bottom: 10px;
         }
-
         #chat-history-content {
             width: 100%;
             margin-left: auto;
             margin-right: auto;
         }
-
         .user-message {
             text-align: left;
             margin: 10px 0;
@@ -136,7 +120,6 @@
             margin-left: auto;
             white-space: pre-wrap;
         }
-
         .ai-message {
             text-align: left;
             margin: 10px 0;
@@ -145,14 +128,12 @@
             max-width: 100%;
             white-space: pre-wrap;
         }
-
         .ai-message .image-container {
             margin-top: 5px;
             display: flex;
             flex-direction: column;
             align-items: flex-start;
         }
-
         .ai-message .image-container.single img {
             max-width: 100%;
             width: 100%;
@@ -160,25 +141,21 @@
             cursor: pointer;
             margin-bottom: 0;
         }
-
         .ai-message .image-container.pair {
             flex-direction: row;
             justify-content: space-between;
         }
-
         .ai-message .image-container.pair img {
             width: calc(50% - 2.5px);
             border-radius: 5px;
             cursor: pointer;
         }
-
         .ai-message .image-container.multiple {
             flex-direction: row;
             flex-wrap: wrap;
             gap: 5px;
             justify-content: flex-start;
         }
-
         .ai-message .image-container.multiple img {
             width: 75px;
             height: 75px;
@@ -186,7 +163,6 @@
             border-radius: 5px;
             cursor: pointer;
         }
-
         #chat-box {
             background: rgba(0, 0, 0, 0.5);
             padding: 15px;
@@ -199,7 +175,6 @@
             margin-left: auto;
             margin-right: auto;
         }
-
         #chat-input {
             flex: 1;
             padding: 10px;
@@ -214,12 +189,10 @@
             scrollbar-width: thin;
             scrollbar-color: #1d1d1d #ff000000;
         }
-
         #chat-input:focus {
             outline: none;
         }
-
-        #send-button, #export-button, #import-button {
+        #send-button {
             width: 40px;
             height: 40px;
             background: #555;
@@ -232,21 +205,13 @@
             justify-content: center;
             font-size: 16px;
             transition: background 0.2s ease;
-            margin-left: 5px;
         }
-
-        #send-button:hover, #export-button:hover, #import-button:hover {
+        #send-button:hover {
             background: #666;
         }
-
-        #import-file {
-            display: none;
-        }
-
         .hidden {
             display: none;
         }
-
         .image-modal {
             position: fixed;
             top: 0;
@@ -259,13 +224,11 @@
             align-items: center;
             z-index: 1000;
         }
-
         .image-modal img {
             max-width: 90%;
             max-height: 90vh;
             object-fit: contain;
         }
-
         .image-modal .close-btn {
             position: absolute;
             top: 20px;
@@ -276,26 +239,14 @@
             font-size: 24px;
             cursor: pointer;
         }
-
         .ai-message a, .user-message a {
             color: inherit;
             text-decoration: underline;
             transition: font-weight 0.2s ease;
         }
-
         .ai-message a:hover, .user-message a:hover {
             font-weight: bold;
         }
-
-        .warning {
-            background: rgba(255, 0, 0, 0.5);
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px auto;
-            text-align: center;
-            width: 40em;
-        }
-
         @media (max-width: 750px) {
             #chat-history {
                 max-width: 90vw;
@@ -319,13 +270,10 @@
             #chat-wrapper {
                 margin-top: 60px;
             }
-            #send-button, #export-button, #import-button {
+            #send-button {
                 width: 36px;
                 height: 36px;
                 font-size: 14px;
-            }
-            .warning {
-                width: 90vw;
             }
         }
     </style>
@@ -348,54 +296,22 @@
         <div id="chat-box">
             <textarea id="chat-input" placeholder="What do you want to know?"></textarea>
             <button id="send-button"><i class="fa fa-arrow-up" aria-hidden="true"></i></button>
-            <button id="export-button" title="Export Chat History"><i class="fa fa-download"></i></button>
-            <button id="import-button" title="Import Chat History"><i class="fa fa-upload"></i></button>
-            <input type="file" id="import-file" accept=".json">
         </div>
     </div>
 
     <script>
-        // SHA-256 hash function (simplified, using crypto API)
-        async function sha256(str) {
-            const msgBuffer = new TextEncoder().encode(str);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-
-        let userId;
-        async function getUserId() {
-            try {
-                const response = await fetch('https://api64.ipify.org?format=json', { mode: 'cors' });
-                if (!response.ok) throw new Error(`IP fetch failed: ${response.status}`);
-                const data = await response.json();
-                userId = btoa(data.ip);
-                console.log('User ID:', userId);
-            } catch (error) {
-                console.error('Error fetching IP:', error);
-                userId = 'anonymous';
-            }
-        }
-        getUserId();
-
         const chatInput = document.getElementById('chat-input');
         const chatHistoryContent = document.getElementById('chat-history-content');
         const chatWrapper = document.getElementById('chat-wrapper');
         const brandWrapper = document.getElementById('brand-wrapper');
         const sendButton = document.getElementById('send-button');
-        const exportButton = document.getElementById('export-button');
-        const importButton = document.getElementById('import-button');
-        const importFile = document.getElementById('import-file');
 
-        // Storage keys
-        let storageKey;
+        // IndexedDB setup
+        const dbName = 'deepshit-chat';
+        const storePrefix = 'chat_';
+        const storeName = `${storePrefix}${window.location.pathname.replace(/\//g, '_')}`;
         const pathHistoryCookieKey = 'pathHistory';
-
-        async function initStorageKey() {
-            const path = window.location.pathname;
-            storageKey = `chatHistory_${await sha256(path)}`;
-        }
-        initStorageKey();
+        const maxMessages = 200; // 100 chat pairs
 
         // Cookie utilities
         function setCookie(name, value, days) {
@@ -422,25 +338,23 @@
         }
 
         // Update path history cookie
-        async function updatePathHistory() {
-            const path = window.location.pathname;
-            const pathHash = await sha256(path);
+        function updatePathHistory() {
             let pathHistory = getCookie(pathHistoryCookieKey);
             let paths = pathHistory ? JSON.parse(pathHistory) : [];
-            if (!paths.includes(pathHash)) {
-                paths.push(pathHash);
+            const path = window.location.pathname;
+            if (!paths.includes(path)) {
+                paths.push(path);
                 setCookie(pathHistoryCookieKey, JSON.stringify(paths), 30);
             }
         }
 
         // Remove path from history
-        async function removePathFromHistory() {
-            const path = window.location.pathname;
-            const pathHash = await sha256(path);
+        function removePathFromHistory() {
             let pathHistory = getCookie(pathHistoryCookieKey);
             if (pathHistory) {
                 let paths = JSON.parse(pathHistory);
-                paths = paths.filter(p => p !== pathHash);
+                const path = window.location.pathname;
+                paths = paths.filter(p => p !== path);
                 if (paths.length > 0) {
                     setCookie(pathHistoryCookieKey, JSON.stringify(paths), 30);
                 } else {
@@ -449,43 +363,71 @@
             }
         }
 
-        // Load chat history
-        async function loadChatHistory() {
-            await initStorageKey();
-            let savedChat = localStorage.getItem(storageKey);
+        // Open IndexedDB
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(dbName, 1);
+                request.onupgradeneeded = event => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(storeName)) {
+                        const store = db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
+                        store.createIndex('timestamp', 'timestamp');
+                    }
+                };
+                request.onsuccess = event => resolve(event.target.result);
+                request.onerror = event => reject(event.target.error);
+            });
+        }
+
+        // Migrate old data
+        async function migrateOldData() {
             const oldCookieKey = `chatHistory_${window.location.pathname.replace(/\//g, '_')}`;
             const oldStorageKey = oldCookieKey;
+            let savedChat;
 
-            // Migrate old data
-            if (!savedChat) {
+            if (localStorage.getItem(oldStorageKey)) {
                 savedChat = localStorage.getItem(oldStorageKey);
-                if (savedChat) {
-                    localStorage.setItem(storageKey, savedChat);
-                    localStorage.removeItem(oldStorageKey);
-                } else {
-                    savedChat = getCookie(oldCookieKey);
-                    if (savedChat) {
-                        localStorage.setItem(storageKey, savedChat);
-                        deleteCookie(oldCookieKey);
-                    }
-                }
-            }
-
-            // Update path history
-            await updatePathHistory();
-
-            // Check for cleared data
-            let pathHistory = getCookie(pathHistoryCookieKey);
-            if (pathHistory && savedChat && JSON.parse(pathHistory).includes(await sha256(window.location.pathname)) && !localStorage.getItem(storageKey)) {
-                const warning = document.createElement('div');
-                warning.className = 'warning';
-                warning.innerText = 'Chat history may have been cleared. Please import a saved history.';
-                chatHistoryContent.appendChild(warning);
+                localStorage.removeItem(oldStorageKey);
+            } else if (getCookie(oldCookieKey)) {
+                savedChat = getCookie(oldCookieKey);
+                deleteCookie(oldCookieKey);
             }
 
             if (savedChat) {
                 try {
                     const messages = JSON.parse(savedChat);
+                    const db = await openDB();
+                    const tx = db.transaction(storeName, 'readwrite');
+                    const store = tx.objectStore(storeName);
+                    messages.forEach(msg => {
+                        store.add({
+                            type: msg.type,
+                            text: msg.text,
+                            images: msg.images || [],
+                            timestamp: Date.now()
+                        });
+                    });
+                    await new Promise((resolve, reject) => {
+                        tx.oncomplete = resolve;
+                        tx.onerror = () => reject(tx.error);
+                    });
+                } catch (error) {
+                    console.error('Error migrating old data:', error);
+                }
+            }
+        }
+
+        // Load chat history
+        async function loadChatHistory() {
+            await migrateOldData();
+            try {
+                const db = await openDB();
+                const tx = db.transaction(storeName, 'readonly');
+                const store = tx.objectStore(storeName);
+                const request = store.getAll();
+
+                request.onsuccess = () => {
+                    const messages = request.result;
                     messages.forEach(message => {
                         const messageDiv = document.createElement('div');
                         messageDiv.className = message.type === 'user' ? 'user-message' : 'ai-message';
@@ -520,107 +462,91 @@
                         chatWrapper.scrollTop = chatWrapper.scrollHeight;
                     }
                     addImageClickListeners();
-                } catch (error) {
-                    console.error('Error parsing chat history:', error);
-                }
+                };
+
+                request.onerror = () => console.error('Error loading history:', request.error);
+                updatePathHistory();
+            } catch (error) {
+                console.error('Error opening DB:', error);
             }
         }
 
-        // Save chat history
-        function saveChatHistory() {
-            let messages = [];
-            const messageElements = chatHistoryContent.querySelectorAll('.user-message, .ai-message');
-            messageElements.forEach(element => {
-                const textSpan = element.querySelector('.message-text');
-                const text = textSpan ? textSpan.innerHTML : element.innerHTML;
-                const images = Array.from(element.querySelectorAll('.image-container img')).map(img => img.src);
-                messages.push({
-                    type: element.classList.contains('user-message') ? 'user' : 'ai',
-                    text,
-                    images
-                });
-            });
-
-            const maxMessages = 200; // 100 chat pairs
-            const maxStorageSize = 5 * 1024 * 1024; // 5MB
-
-            if (messages.length > maxMessages) {
-                messages.splice(0, messages.length - maxMessages);
-            }
-
-            let data = JSON.stringify(messages);
-            let size = new TextEncoder().encode(data).length;
-
-            while (size > maxStorageSize && messages.length > 0) {
-                messages.shift();
-                data = JSON.stringify(messages);
-                size = new TextEncoder().encode(data).length;
-            }
-
+        // Save chat message
+        async function saveChatHistory(message) {
             try {
-                localStorage.setItem(storageKey, data);
+                const db = await openDB();
+                const tx = db.transaction(storeName, 'readwrite');
+                const store = tx.objectStore(storeName);
+
+                // Add new message
+                store.add({
+                    type: message.type,
+                    text: message.text,
+                    images: message.images || [],
+                    timestamp: Date.now()
+                });
+
+                // Check message count
+                const countRequest = store.count();
+                countRequest.onsuccess = async () => {
+                    if (countRequest.result > maxMessages) {
+                        const index = store.index('timestamp');
+                        const cursorRequest = index.openCursor(null, 'next');
+                        cursorRequest.onsuccess = event => {
+                            const cursor = event.target.result;
+                            if (cursor) {
+                                const toDelete = countRequest.result - maxMessages;
+                                for (let i = 0; i < toDelete && cursor; i++) {
+                                    store.delete(cursor.primaryKey);
+                                    cursor.continue();
+                                }
+                            }
+                        };
+                    }
+                };
+
+                await new Promise((resolve, reject) => {
+                    tx.oncomplete = resolve;
+                    tx.onerror = () => reject(tx.error);
+                });
             } catch (error) {
-                console.error('Error saving to localStorage:', error);
+                console.error('Error saving to DB:', error);
             }
         }
 
         // Clear chat history
         async function clearChatHistory() {
-            localStorage.removeItem(storageKey);
-            await removePathFromHistory();
-            chatHistoryContent.innerHTML = '';
-            brandWrapper.classList.remove('top-left');
-        }
-
-        // Export chat history
-        function exportChatHistory() {
-            const savedChat = localStorage.getItem(storageKey);
-            if (savedChat) {
-                const blob = new Blob([savedChat], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `chat_history_${window.location.pathname.replace(/\//g, '_')}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
+            try {
+                const db = await openDB();
+                const tx = db.transaction(storeName, 'readwrite');
+                const store = tx.objectStore(storeName);
+                store.clear();
+                await new Promise((resolve, reject) => {
+                    tx.oncomplete = resolve;
+                    tx.onerror = () => reject(tx.error);
+                });
+                chatHistoryContent.innerHTML = '';
+                brandWrapper.classList.remove('top-left');
+                removePathFromHistory();
+            } catch (error) {
+                console.error('Error clearing DB:', error);
             }
         }
 
-        // Import chat history
-        function importChatHistory(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const data = JSON.parse(e.target.result);
-                        localStorage.setItem(storageKey, JSON.stringify(data));
-                        chatHistoryContent.innerHTML = '';
-                        loadChatHistory();
-                    } catch (error) {
-                        console.error('Error importing chat history:', error);
-                        alert('Invalid chat history file.');
-                    }
-                };
-                reader.readAsText(file);
-            }
-        }
-
-        // Event listeners
+        // Load history on page load
         loadChatHistory();
+
         chatInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 sendMessage();
             }
         });
+
         sendButton.addEventListener('click', sendMessage);
-        exportButton.addEventListener('click', exportChatHistory);
-        importButton.addEventListener('click', () => importFile.click());
-        importFile.addEventListener('change', importChatHistory);
 
         function linkifyText(text) {
-            let result = text.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+            let result = text.replace(/</g, '<').replace(/>/g, '>').replace(/\n/g, '<br>');
 
             result = result.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (match, displayText, url) => {
                 return `<a href="${url}" target="_blank">${displayText}</a>`;
@@ -640,16 +566,22 @@
         }
 
         async function sendMessage() {
-            const message = chatInput.value.trim();
-            if (!message) return;
+            const messageText = chatInput.value.trim();
+            if (!messageText) return;
 
-            const userMessage = document.createElement('div');
-            userMessage.className = 'user-message';
+            // User message
+            const userMessage = {
+                type: 'user',
+                text: linkifyText(messageText),
+                images: []
+            };
+            const userMessageDiv = document.createElement('div');
+            userMessageDiv.className = 'user-message';
             const userTextSpan = document.createElement('span');
             userTextSpan.className = 'message-text';
-            userTextSpan.innerHTML = linkifyText(message);
-            userMessage.appendChild(userTextSpan);
-            chatHistoryContent.appendChild(userMessage);
+            userTextSpan.innerHTML = userMessage.text;
+            userMessageDiv.appendChild(userTextSpan);
+            chatHistoryContent.appendChild(userMessageDiv);
             chatWrapper.scrollTop = chatWrapper.scrollHeight;
 
             chatInput.value = '';
@@ -657,7 +589,7 @@
                 brandWrapper.classList.add('top-left');
             }
 
-            saveChatHistory();
+            await saveChatHistory(userMessage);
 
             try {
                 const response = await fetch('https://agent.aah.id.vn/webhook/deepshit-assistant', {
@@ -666,10 +598,13 @@
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
-                    body: JSON.stringify({ userId, message })
+                    body: JSON.stringify({ message: messageText })
                 });
 
-                if (!response.ok) throw new Error(`Server error: ${response.status}`);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Server error: ${response.status} - ${errorText}`);
+                }
 
                 const result = await response.json();
                 console.log('Parsed response:', result);
@@ -717,7 +652,11 @@
                 chatHistoryContent.appendChild(aiMessage);
                 chatWrapper.scrollTop = chatWrapper.scrollHeight;
 
-                saveChatHistory();
+                await saveChatHistory({
+                    type: 'ai',
+                    text: linkifyText(outputMessage),
+                    images: photoUrls
+                });
                 addImageClickListeners();
             } catch (error) {
                 console.error('Error:', error);
@@ -729,7 +668,11 @@
                 errorMessage.appendChild(errorTextSpan);
                 chatHistoryContent.appendChild(errorMessage);
                 chatWrapper.scrollTop = chatWrapper.scrollHeight;
-                saveChatHistory();
+                await saveChatHistory({
+                    type: 'ai',
+                    text: `Error: ${error.message}`,
+                    images: []
+                });
             }
         }
 
