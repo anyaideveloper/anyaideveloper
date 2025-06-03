@@ -300,18 +300,16 @@
     </div>
 
     <script>
-        const chatInput = document.getElementById('chat-input');
-        const chatHistoryContent = document.getElementById('chat-history-content');
-        const chatWrapper = document.getElementById('chat-wrapper');
-        const brandWrapper = document.getElementById('brand-wrapper');
-        const sendButton = document.getElementById('send-button');
+        let userId;
+        const userIdCookieKey = 'deepshit_userId';
 
-        // IndexedDB setup
-        const dbName = 'deepshit-chat';
-        const storePrefix = 'chat_';
-        const storeName = `${storePrefix}${window.location.pathname.replace(/\//g, '_')}`;
-        const pathHistoryCookieKey = 'pathHistory';
-        const maxMessages = 200; // 100 chat pairs
+        // Generate UUID
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
 
         // Cookie utilities
         function setCookie(name, value, days) {
@@ -336,6 +334,38 @@
         function deleteCookie(name) {
             document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;SameSite=Strict`;
         }
+
+        // Initialize userId
+        async function initUserId() {
+            let savedUserId = getCookie(userIdCookieKey);
+            if (savedUserId) {
+                userId = savedUserId;
+                return;
+            }
+            try {
+                const response = await fetch('https://api64.ipify.org?format=json', { mode: 'cors' });
+                if (!response.ok) throw new Error(`IP fetch failed: ${response.status}`);
+                const data = await response.json();
+                userId = btoa(data.ip);
+            } catch (error) {
+                console.error('Error fetching IP:', error);
+                userId = generateUUID();
+            }
+            setCookie(userIdCookieKey, userId, 30);
+        }
+
+        const chatInput = document.getElementById('chat-input');
+        const chatHistoryContent = document.getElementById('chat-history-content');
+        const chatWrapper = document.getElementById('chat-wrapper');
+        const brandWrapper = document.getElementById('brand-wrapper');
+        const sendButton = document.getElementById('send-button');
+
+        // IndexedDB setup
+        const dbName = 'deepshit-chat';
+        const storePrefix = 'chat_';
+        const storeName = `${storePrefix}${window.location.pathname.replace(/\//g, '_')}`;
+        const pathHistoryCookieKey = 'pathHistory';
+        const maxMessages = 200; // 100 chat pairs
 
         // Update path history cookie
         function updatePathHistory() {
@@ -419,6 +449,7 @@
 
         // Load chat history
         async function loadChatHistory() {
+            await initUserId();
             await migrateOldData();
             try {
                 const db = await openDB();
@@ -568,6 +599,7 @@
         async function sendMessage() {
             const messageText = chatInput.value.trim();
             if (!messageText) return;
+            if (!userId) await initUserId();
 
             // User message
             const userMessage = {
@@ -598,7 +630,7 @@
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
-                    body: JSON.stringify({ message: messageText })
+                    body: JSON.stringify({ userId, message: messageText })
                 });
 
                 if (!response.ok) {
