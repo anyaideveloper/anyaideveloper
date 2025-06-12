@@ -1,43 +1,4 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -126,7 +87,7 @@
             top: 0;
             right: 0;
             width: 100%;
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0, 0, 0, 0.7);
             padding: 10px;
             z-index: 11;
         }
@@ -354,15 +315,15 @@
         // IndexedDB setup
         const storeName = `chat_${window.location.pathname.replace(/\//g, '_')}`;
 
-        // Open IndexedDB
+        // Open or create IndexedDB
         function openDB() {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open(dbName, 1);
                 request.onupgradeneeded = event => {
                     const db = event.target.result;
                     if (!db.objectStoreNames.contains(storeName)) {
-                        const store = db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
-                        store.createIndex('timestamp', 'timestamp', { unique: false });
+                        db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true })
+                            .createIndex('timestamp', 'timestamp', { unique: false });
                     }
                 };
                 request.onsuccess = event => resolve(event.target.result);
@@ -550,7 +511,23 @@
                 const tx = db.transaction([storeName], 'readwrite');
                 const store = tx.objectStore(storeName);
                 const clearRequest = store.clear();
-                clearRequest.onerror = () => console.error('Error clearing history:', clearRequest.error);
+                clearRequest.onerror = () => {
+                    console.error('Error clearing history:', clearRequest.error);
+                    // Recreate store if not found
+                    const upgradeTx = db.transaction([storeName], 'versionchange');
+                    db.close();
+                    const newRequest = indexedDB.open(dbName, (db.version || 0) + 1);
+                    newRequest.onupgradeneeded = event => {
+                        const newDb = event.target.result;
+                        if (!newDb.objectStoreNames.contains(storeName)) {
+                            newDb.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true })
+                                .createIndex('timestamp', 'timestamp', { unique: false });
+                        }
+                    };
+                    newRequest.onsuccess = () => {
+                        clearChatHistory(reload); // Retry clear
+                    };
+                };
                 await new Promise((resolve, reject) => {
                     tx.oncomplete = resolve;
                     tx.onerror = () => reject(tx.error);
@@ -786,6 +763,7 @@
         function showExercise(data) {
             exerciseData = data;
             exerciseContent.innerHTML = '';
+            chatContainer.style.width = '50%';
             chatContainer.classList.add('shrunk');
             exerciseBoard.classList.add('active');
             resizeHandle.classList.add('active');
