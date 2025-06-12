@@ -45,7 +45,7 @@
             padding: 0;
         }
         #chat-container.shrunk {
-            width: 50%;
+            width: 60%;
         }
         #new-chat-button {
             position: absolute;
@@ -65,43 +65,46 @@
             right: 20px;
         }
         #exercise-board {
-            width: 50%;
+            width: 40%;
             height: 100vh;
             background: radial-gradient(circle at 50% 50%, #1a3c2b 40%, #123522 100%);
             color: #fff;
             font-family: 'Chalkduster', 'Arial', sans-serif;
             position: fixed;
-            right: -50%;
+            right: -40%;
             top: 0;
             z-index: 10;
             transition: right 0.3s ease;
             overflow-y: auto;
-            padding: 20px;
             box-sizing: border-box;
         }
         #exercise-board.active {
             right: 0;
         }
         #exercise-board-header {
-            position: absolute;
+            position: sticky;
             top: 0;
-            right: 0;
             width: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 37px;
             z-index: 11;
+            box-sizing: border-box;
         }
         #exercise-board .close-btn {
-            background: rgba(0, 0, 0, 0.5);
+            position: relative;
+            top: -1.2em;
+            background: rgba(0, 0, 0, 0);
             color: white;
             border: none;
             border-radius: 5px;
-            padding: 5px 10px;
+            padding: 5px;
             cursor: pointer;
             font-size: 16px;
             float: right;
         }
         #exercise-board .finish-btn {
+            position: relative;
+            top: -1.2em;
             background: rgba(0, 0, 0, 0.5);
             color: white;
             border: none;
@@ -110,9 +113,13 @@
             cursor: pointer;
             font-size: 14px;
             float: left;
+            transition: background 0.2s ease;
+        }
+        #exercise-board .finish-btn:hover {
+            background: #666;
         }
         #exercise-content {
-            margin-top: 60px;
+            margin: 40px 50px 0px 50px;
         }
         #exercise-content .section {
             margin-bottom: 40px;
@@ -129,12 +136,12 @@
             font-size: 18px;
         }
         #exercise-content .question input {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
             border: 1px solid white;
             border-radius: 5px;
             margin-left: 10px;
             padding: 5px;
-            color: black;
+            color: white;
         }
         #exercise-content .image-container {
             margin: 20px 0;
@@ -165,13 +172,15 @@
             background: #555;
             cursor: ew-resize;
             position: absolute;
-            left: 50%;
+            left: 60%;
             top: 0;
             z-index: 15;
-            display: none;
+            opacity: 0;
+            transition: opacity 0.01s ease;
         }
         #resize-handle.active {
-            display: block;
+            opacity: 1;
+            transition: opacity 0.8s ease-in;
         }
         #exercise-board::-webkit-scrollbar {
             width: 8px;
@@ -195,7 +204,6 @@
                 right: 0;
             }
             #exercise-board-header {
-                right: 0;
                 width: 100%;
             }
             #chat-container.shrunk #new-chat-button {
@@ -237,18 +245,48 @@
         <div id="resize-handle"></div>
     </div>
 
+    <script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+    </script>
     <script>
-        // Custom values for this site
         const userIdCookieKey = 'japaneseTeacher_userId';
         const webhookEndpoint = 'https://agent.aah.id.vn/webhook/japanese-teacher';
         const finishExerciseEndpoint = 'https://agent.aah.id.vn/webhook/japanese-teacher-finish-exercise';
         const dbName = 'japaneseTeacher-chat';
         let userId;
         const pathHistoryCookieKey = 'pathHistory';
-        const maxMessages = 200; // 100 chat pairs
+        const maxMessages = 200;
         let exerciseData = null;
 
-        // Generate UUID
         function generateUUID() {
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
                 const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -256,7 +294,6 @@
             });
         }
 
-        // Cookie utilities
         function setCookie(name, value, days) {
             const date = new Date();
             date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
@@ -280,7 +317,6 @@
             document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;SameSite=Strict`;
         }
 
-        // Initialize userId
         async function initUserId() {
             let savedUserId = getCookie(userIdCookieKey);
             if (savedUserId) {
@@ -312,10 +348,8 @@
         const finishBtn = document.querySelector('#exercise-board .finish-btn');
         const resizeHandle = document.getElementById('resize-handle');
 
-        // IndexedDB setup
         const storeName = `chat_${window.location.pathname.replace(/\//g, '_')}`;
 
-        // Open or create IndexedDB
         function openDB() {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open(dbName, 1);
@@ -331,7 +365,6 @@
             });
         }
 
-        // Update path history cookie
         function updatePathHistory() {
             let pathHistory = getCookie(pathHistoryCookieKey);
             let paths = pathHistory ? JSON.parse(pathHistory) : [];
@@ -342,7 +375,6 @@
             }
         }
 
-        // Remove path from history
         function removePathFromHistory() {
             let pathHistory = getCookie(pathHistoryCookieKey);
             if (pathHistory) {
@@ -357,7 +389,6 @@
             }
         }
 
-        // Migrate old data
         async function migrateOldData() {
             const oldCookieKey = `chatHistory_${window.location.pathname.replace(/\//g, '_')}`;
             const oldStorageKey = oldCookieKey;
@@ -395,7 +426,6 @@
             }
         }
 
-        // Load chat history
         async function loadChatHistory() {
             await initUserId();
             await migrateOldData();
@@ -458,14 +488,12 @@
             }
         }
 
-        // Save chat message
         async function saveChatHistory(message) {
             try {
                 const db = await openDB();
                 const tx = db.transaction([storeName], 'readwrite');
                 const store = tx.objectStore(storeName);
 
-                // Add new message
                 const addRequest = store.add({
                     type: message.type,
                     text: message.text,
@@ -475,7 +503,6 @@
                 });
                 addRequest.onerror = () => console.error('Error adding message:', addRequest.error);
 
-                // Check message count
                 const countRequest = store.count();
                 countRequest.onsuccess = () => {
                     if (countRequest.result > maxMessages) {
@@ -504,7 +531,6 @@
             }
         }
 
-        // Clear chat history
         async function clearChatHistory(reload = false) {
             try {
                 const db = await openDB();
@@ -513,8 +539,6 @@
                 const clearRequest = store.clear();
                 clearRequest.onerror = () => {
                     console.error('Error clearing history:', clearRequest.error);
-                    // Recreate store if not found
-                    const upgradeTx = db.transaction([storeName], 'versionchange');
                     db.close();
                     const newRequest = indexedDB.open(dbName, (db.version || 0) + 1);
                     newRequest.onupgradeneeded = event => {
@@ -525,8 +549,9 @@
                         }
                     };
                     newRequest.onsuccess = () => {
-                        clearChatHistory(reload); // Retry clear
+                        clearChatHistory(reload);
                     };
+                    newRequest.onerror = () => console.error('Error recreating DB:', newRequest.error);
                 };
                 await new Promise((resolve, reject) => {
                     tx.oncomplete = resolve;
@@ -544,10 +569,8 @@
             }
         }
 
-        // Load history on page load
         loadChatHistory();
 
-        // Event listener for new chat button
         newChatButton.addEventListener('click', () => clearChatHistory(true));
 
         chatInput.addEventListener('keydown', function(e) {
@@ -562,7 +585,6 @@
         function linkifyText(text) {
             let result = text.replace(/</g, '<').replace(/>/g, '>').replace(/\n/g, '<br>');
 
-            // Split long text chunks (>12 chars) for links
             result = result.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (match, displayText, url) => {
                 if (url.length > 12) {
                     let wrappedUrl = '';
@@ -599,7 +621,6 @@
             if (!messageText) return;
             if (!userId) await initUserId();
 
-            // User message
             const userMessage = {
                 type: 'user',
                 text: linkifyText(messageText),
@@ -638,8 +659,6 @@
                 }
 
                 const result = await response.json();
-                console.log('Parsed response:', result);
-
                 const aiMessage = document.createElement('div');
                 aiMessage.className = 'ai-message';
 
@@ -763,9 +782,12 @@
         function showExercise(data) {
             exerciseData = data;
             exerciseContent.innerHTML = '';
-            chatContainer.style.width = '50%';
+            chatContainer.style.width = '60%';
             chatContainer.classList.add('shrunk');
+            exerciseBoard.style.width = '40%'; // Ensure default width
+            exerciseBoard.style.right = '0'; // Ensure board is fully visible
             exerciseBoard.classList.add('active');
+            resizeHandle.style.left = '60%'; // Reset resize handle position
             resizeHandle.classList.add('active');
 
             try {
@@ -807,6 +829,9 @@
             resizeHandle.classList.remove('active');
             exerciseContent.innerHTML = '';
             exerciseData = null;
+            exerciseBoard.style.width = '40%';
+            exerciseBoard.style.right = '-40%';
+            resizeHandle.style.left = '60%';
         }
 
         async function finishAndCheck() {
@@ -875,11 +900,9 @@
 
         closeBtn.addEventListener('click', () => {
             hideExerciseBoard();
-            chatContainer.style.width = '100%';
         });
         finishBtn.addEventListener('click', finishAndCheck);
 
-        // Resize functionality
         let isResizing = false;
         resizeHandle.addEventListener('mousedown', (e) => {
             isResizing = true;
@@ -891,7 +914,7 @@
             if (!isResizing) return;
             const containerWidth = document.getElementById('container').offsetWidth;
             const newChatWidth = (e.clientX / containerWidth) * 100;
-            const maxBoardWidth = 66.67; // 2/3 of the page
+            const maxBoardWidth = 66.67;
             if (newChatWidth >= 33.33 && newChatWidth <= 70) {
                 chatContainer.style.width = `${newChatWidth}%`;
                 exerciseBoard.style.width = `${100 - newChatWidth}%`;
