@@ -176,11 +176,11 @@
             top: 0;
             z-index: 15;
             opacity: 0;
-            transition: opacity 0.01s ease;
+            transition: opacity 1s ease;
         }
         #resize-handle.active {
             opacity: 1;
-            transition: opacity 0.8s ease-in;
+            transition: opacity 0.1s ease;
         }
         #exercise-board::-webkit-scrollbar {
             width: 8px;
@@ -286,6 +286,7 @@
         const pathHistoryCookieKey = 'pathHistory';
         const maxMessages = 200;
         let exerciseData = null;
+        const storeName = 'chat_history';
 
         function generateUUID() {
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -348,11 +349,10 @@
         const finishBtn = document.querySelector('#exercise-board .finish-btn');
         const resizeHandle = document.getElementById('resize-handle');
 
-        const storeName = `chat_${window.location.pathname.replace(/\//g, '_')}`;
-
         function openDB() {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open(dbName, 1);
+
                 request.onupgradeneeded = event => {
                     const db = event.target.result;
                     if (!db.objectStoreNames.contains(storeName)) {
@@ -360,8 +360,20 @@
                             .createIndex('timestamp', 'timestamp', { unique: false });
                     }
                 };
-                request.onsuccess = event => resolve(event.target.result);
-                request.onerror = event => reject(event.target.error);
+
+                request.onsuccess = event => {
+                    resolve(event.target.result);
+                };
+
+                request.onerror = event => {
+                    console.error('DB open error:', event.target.error);
+                    reject(event.target.error);
+                };
+
+                request.onblocked = () => {
+                    console.warn('DB open blocked, closing open connections');
+                    reject(new Error('Database access blocked'));
+                };
             });
         }
 
@@ -485,6 +497,14 @@
                 updatePathHistory();
             } catch (error) {
                 console.error('Error opening DB:', error);
+                // Clear existing database and retry
+                try {
+                    await indexedDB.deleteDatabase(dbName);
+                    const db = await openDB();
+                    await loadChatHistory();
+                } catch (retryError) {
+                    console.error('Retry failed:', retryError);
+                }
             }
         }
 
@@ -528,6 +548,14 @@
                 });
             } catch (error) {
                 console.error('Error saving to DB:', error);
+                // Clear existing database and retry
+                try {
+                    await indexedDB.deleteDatabase(dbName);
+                    const db = await openDB();
+                    await saveChatHistory(message);
+                } catch (retryError) {
+                    console.error('Retry failed:', retryError);
+                }
             }
         }
 
@@ -537,22 +565,7 @@
                 const tx = db.transaction([storeName], 'readwrite');
                 const store = tx.objectStore(storeName);
                 const clearRequest = store.clear();
-                clearRequest.onerror = () => {
-                    console.error('Error clearing history:', clearRequest.error);
-                    db.close();
-                    const newRequest = indexedDB.open(dbName, (db.version || 0) + 1);
-                    newRequest.onupgradeneeded = event => {
-                        const newDb = event.target.result;
-                        if (!newDb.objectStoreNames.contains(storeName)) {
-                            newDb.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true })
-                                .createIndex('timestamp', 'timestamp', { unique: false });
-                        }
-                    };
-                    newRequest.onsuccess = () => {
-                        clearChatHistory(reload);
-                    };
-                    newRequest.onerror = () => console.error('Error recreating DB:', newRequest.error);
-                };
+                clearRequest.onerror = () => console.error('Error clearing history:', clearRequest.error);
                 await new Promise((resolve, reject) => {
                     tx.oncomplete = resolve;
                     tx.onerror = () => reject(tx.error);
@@ -566,6 +579,14 @@
                 }
             } catch (error) {
                 console.error('Error clearing DB:', error);
+                // Clear existing database and retry
+                try {
+                    await indexedDB.deleteDatabase(dbName);
+                    const db = await openDB();
+                    await clearChatHistory(reload);
+                } catch (retryError) {
+                    console.error('Retry failed:', retryError);
+                }
             }
         }
 
@@ -583,7 +604,7 @@
         sendButton.addEventListener('click', sendMessage);
 
         function linkifyText(text) {
-            let result = text.replace(/</g, '<').replace(/>/g, '>').replace(/\n/g, '<br>');
+            let result = text.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
 
             result = result.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (match, displayText, url) => {
                 if (url.length > 12) {
@@ -620,6 +641,10 @@
             const messageText = chatInput.value.trim();
             if (!messageText) return;
             if (!userId) await initUserId();
+            if (!userId) {
+                console.error('User ID not initialized');
+                return;
+            }
 
             const userMessage = {
                 type: 'user',
@@ -644,13 +669,15 @@
             await saveChatHistory(userMessage);
 
             try {
+                console.log('Sending to endpoint:', webhookEndpoint, { userId, message: messageText });
                 const response = await fetch(webhookEndpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
-                    body: JSON.stringify({ userId, message: messageText })
+                    body: JSON.stringify({ userId, message: messageText }),
+                    mode: 'cors'
                 });
 
                 if (!response.ok) {
@@ -659,6 +686,7 @@
                 }
 
                 const result = await response.json();
+                console.log('Received response:', result);
                 const aiMessage = document.createElement('div');
                 aiMessage.className = 'ai-message';
 
@@ -721,7 +749,7 @@
                 });
                 addImageClickListeners();
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error sending message:', error);
                 const errorMessage = document.createElement('div');
                 errorMessage.className = 'ai-message';
                 const errorTextSpan = document.createElement('span');
@@ -784,10 +812,10 @@
             exerciseContent.innerHTML = '';
             chatContainer.style.width = '60%';
             chatContainer.classList.add('shrunk');
-            exerciseBoard.style.width = '40%'; // Ensure default width
-            exerciseBoard.style.right = '0'; // Ensure board is fully visible
+            exerciseBoard.style.width = '40%';
+            exerciseBoard.style.right = '0';
             exerciseBoard.classList.add('active');
-            resizeHandle.style.left = '60%'; // Reset resize handle position
+            resizeHandle.style.left = '60%';
             resizeHandle.classList.add('active');
 
             try {
@@ -855,7 +883,8 @@
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
-                    body: JSON.stringify({ userId, exercise: exerciseData })
+                    body: JSON.stringify({ userId, exercise: exerciseData }),
+                    mode: 'cors'
                 });
 
                 if (!response.ok) {
