@@ -1,0 +1,155 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Japanese Exercise Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #jsonInput {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 20px;
+        }
+        #exerciseOutput {
+            border: 1px solid #ccc;
+            padding: 20px;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        .section h2 {
+            margin-bottom: 30px;
+        }
+        .question {
+            margin-bottom: 30px;
+        }
+        .question p:first-child {
+            margin-bottom: 20px;
+        }
+        .question input {
+            margin-left: 10px;
+        }
+        .question .image-container {
+            margin: 20px 0;
+        }
+        .question img {
+            max-width: 100%;
+            margin: 10px;
+            box-sizing: border-box;
+        }
+        button {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Japanese Exercise Generator</h1>
+    <textarea id="jsonInput" placeholder="Enter JSON exercise data here"></textarea>
+    <button onclick="generateExercise()">Generate Exercise</button>
+    <button onclick="finishAndCheck()">Finish & Check</button>
+    <div id="exerciseOutput"></div>
+
+    <script>
+        let exerciseData = null;
+
+        function generateExercise() {
+            const jsonInput = document.getElementById('jsonInput').value;
+            const outputDiv = document.getElementById('exerciseOutput');
+            outputDiv.innerHTML = '';
+
+            try {
+                exerciseData = JSON.parse(jsonInput);
+                exerciseData.sections.forEach((section, index) => {
+                    const sectionDiv = document.createElement('div');
+                    sectionDiv.className = 'section';
+                    sectionDiv.innerHTML = `<h2>${section.title}</h2>`;
+                    section.questions.forEach((question, qIndex) => {
+                        const questionDiv = document.createElement('div');
+                        questionDiv.className = 'question';
+                        let questionContent = `<p>${question.text}</p>`;
+                        if (question.image && Array.isArray(question.image) && question.image.length > 0) {
+                            questionContent += `<div class="image-container">`;
+                            question.image.forEach(imgUrl => {
+                                questionContent += `<img src="${imgUrl}" alt="Exercise image">`;
+                            });
+                            questionContent += `</div>`;
+                        }
+                        questionContent += `
+                            ${question.examples ? question.examples.map(ex => `<p>例: ${ex}</p>`).join('') : ''}
+                            ${question.items.map((item, iIndex) => `
+                                <p>${iIndex + 1}) ${item.prompt} <input type="text" id="answer_${index}_${qIndex}_${iIndex}" value="${item.answer || ''}"></p>
+                            `).join('')}
+                        `;
+                        questionDiv.innerHTML = questionContent;
+                        sectionDiv.appendChild(questionDiv);
+                    });
+                    outputDiv.appendChild(sectionDiv);
+                });
+            } catch (e) {
+                outputDiv.innerHTML = '<p style="color: red;">Invalid JSON format</p>';
+            }
+        }
+
+        function finishAndCheck() {
+            if (!exerciseData) return;
+
+            exerciseData.sections.forEach((section, index) => {
+                section.questions.forEach((question, qIndex) => {
+                    question.items.forEach((item, iIndex) => {
+                        const input = document.getElementById(`answer_${index}_${qIndex}_${iIndex}`);
+                        if (input) {
+                            item.answer = input.value;
+                        }
+                    });
+                });
+            });
+
+            document.getElementById('jsonInput').value = JSON.stringify(exerciseData, null, 2);
+            alert('Answers saved to JSON!');
+        }
+    </script>
+</body>
+</html>
